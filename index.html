@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>声の代わりアプリ</title>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --accent: #4a7dfc;
+    --accent-dark: #2f5fd6;
+    --text: #222;
+    --sub: #888;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    padding-bottom: 100px;
+  }
+  h1 {
+    font-size: 1.3rem;
+    text-align: center;
+    margin: 8px 0 4px;
+  }
+  .sub {
+    text-align: center;
+    color: var(--sub);
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+  .section {
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: var(--accent-dark);
+    margin: 0 0 8px 4px;
+    border-left: 4px solid var(--accent);
+    padding-left: 8px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+  }
+  button.word {
+    background: var(--card);
+    border: 2px solid #e0e4ec;
+    border-radius: 14px;
+    padding: 14px 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.word:active {
+    transform: scale(0.94);
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent-dark);
+  }
+  #bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #ddd;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  }
+  #lastText {
+    flex: 1;
+    font-size: 1rem;
+    color: var(--sub);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #stopBtn {
+    background: #ff5b5b;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+  #speedRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--sub);
+  }
+  #speedRow input {
+    width: 120px;
+  }
+  #freeInputRow {
+    display: flex;
+    gap: 8px;
+  }
+  #freeInput {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e4ec;
+    border-radius: 12px;
+    font-size: 1rem;
+  }
+  #freeSpeakBtn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  #freeSpeakBtn:active {
+    background: var(--accent-dark);
+  }
+
+  .wrap { position: relative; }
+  button.word.custom { width: 100%; }
+  .del {
+    position: absolute; top: -6px; right: -6px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: none; background: #ff5b5b; color: #fff;
+    font-size: 14px; line-height: 24px; padding: 0; display: none;
+  }
+  body.editing .del { display: block; }
+  body.editing button.word.custom { border-style: dashed; border-color: #ff5b5b; }
+  #addBox {
+    background: var(--card); border: 2px solid #e0e4ec; border-radius: 14px;
+    padding: 12px; display: none; flex-direction: column; gap: 8px;
+  }
+  #addBox.open { display: flex; }
+  #addBox input, #addBox select {
+    padding: 10px; border: 2px solid #e0e4ec; border-radius: 10px;
+    font-size: 1rem; width: 100%; background: #fff;
+  }
+  .toolRow { display: flex; gap: 8px; margin-bottom: 20px; }
+  .toolRow button, #addSubmit {
+    flex: 1; background: var(--card); border: 2px solid var(--accent);
+    color: var(--accent-dark); border-radius: 12px; padding: 10px;
+    font-size: 0.9rem; font-weight: bold;
+  }
+  #addSubmit { background: var(--accent); color: #fff; }
+  body.editing #editToggle { background: #ff5b5b; border-color: #ff5b5b; color: #fff; }
+  .hint { font-size: 0.75rem; color: var(--sub); }
+</style>
+</head>
+<body>
+
+<h1>声の代わりアプリ</h1>
+<div class="sub">ボタンを押すと読み上げるよ</div>
+
+<div id="speedRow">
+  速さ
+  <input type="range" id="rate" min="0.5" max="1.5" step="0.1" value="1">
+  <span id="rateVal">1.0</span>
+</div>
+
+<div class="section">
+  <div class="section-title">その他（自由入力）</div>
+  <div id="freeInputRow">
+    <input type="text" id="freeInput" placeholder="言いたいことを入力">
+    <button id="freeSpeakBtn">読み上げ</button>
+  </div>
+</div>
+
+<div class="toolRow">
+  <button id="addToggle">＋ 言葉を追加</button>
+  <button id="editToggle">削除モード</button>
+</div>
+
+<div class="section">
+  <div id="addBox">
+    <input type="text" id="addLabel" placeholder="ボタンの表示（例：トイレ）">
+    <input type="text" id="addSpeak" placeholder="読み方（空なら表示と同じ）">
+    <div class="hint">読み間違えるときは、ひらがなで読み方を入れてね</div>
+    <select id="addCat"></select>
+    <input type="text" id="addNewCat" placeholder="新しいカテゴリ名" style="display:none">
+    <button id="addSubmit">追加する</button>
+  </div>
+</div>
+
+<div id="buttons"></div>
+
+<div id="bar">
+  <div id="lastText">ボタンを押してね</div>
+  <button id="stopBtn">■ 止める</button>
+</div>
+
+<script>
+const categories = [
+  {
+    title: "返事",
+    words: [
+      { label: "うん", speak: "うん" },
+      { label: "いいえ", speak: "いいえ" },
+    ]
+  },
+  {
+    title: "状態",
+    words: [
+      { label: "風邪で声出ない", speak: "風邪で声が出ない" },
+      { label: "喉", speak: "喉" },
+      { label: "頭", speak: "頭" },
+      { label: "痛い", speak: "痛い" },
+      { label: "乾いた", speak: "乾いた" },
+      { label: "痰", speak: "痰" },
+      { label: "絡む", speak: "絡む" },
+    ]
+  },
+  {
+    title: "呼びかけ",
+    words: [
+      { label: "Mom", speak: "ままー" },
+      { label: "助けて", speak: "助けて" },
+    ]
+  },
+  {
+    title: "飲食",
+    words: [
+      { label: "お茶", speak: "お茶" },
+      { label: "水", speak: "水" },
+      { label: "飲み物", speak: "飲み物" },
+      { label: "食べる", speak: "食べる" },
+      { label: "薬", speak: "薬" },
+      { label: "飲む", speak: "飲む" },
+      { label: "水筒", speak: "水筒" },
+      { label: "コップ", speak: "コップ" },
+    ]
+  },
+  {
+    title: "対応",
+    words: [
+      { label: "病院", speak: "病院" },
+      { label: "行く", speak: "いく" },
+      { label: "くれ", speak: "くれ" },
+      { label: "ない", speak: "ない" },
+    ]
+  },
+  {
+    title: "学校",
+    words: [
+      { label: "学校", speak: "学校" },
+      { label: "塾", speak: "塾" },
+      { label: "休む", speak: "休む" },
+    ]
+  },
+  {
+    title: "ケア用品",
+    words: [
+      { label: "のど飴", speak: "のど飴" },
+      { label: "喉スプレー", speak: "喉スプレー" },
+    ]
+  },
+  {
+    title: "挨拶",
+    words: [
+      { label: "行ってらっしゃい", speak: "いってらっしゃい" },
+      { label: "おかえり", speak: "おかえり" },
+      { label: "ただいま", speak: "ただいま" },
+      { label: "行ってきます", speak: "いってきます" },
+      { label: "ありがとう", speak: "ありがとう" },
+    ]
+  },
+];
+
+const container = document.getElementById("buttons");
+const lastText = document.getElementById("lastText");
+const rateInput = document.getElementById("rate");
+const rateVal = document.getElementById("rateVal");
+
+rateInput.addEventListener("input", () => {
+  rateVal.textContent = parseFloat(rateInput.value).toFixed(1);
+});
+
+const STORAGE_KEY = "voiceApp.customWords.v1";
+const NEW_CAT = "__new__";
+let customWords = loadCustom();
+
+function loadCustom() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveCustom() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(customWords));
+  } catch (e) {
+    alert("保存できなかった（プライベートモードかも）");
+  }
+}
+
+function buildView() {
+  // 既定カテゴリ + 追加分を結合
+  const merged = categories.map(c => ({ title: c.title, words: c.words.map(w => ({ ...w })) }));
+  customWords.forEach(cw => {
+    let cat = merged.find(c => c.title === cw.cat);
+    if (!cat) {
+      cat = { title: cw.cat, words: [] };
+      merged.push(cat);
+    }
+    cat.words.push({ label: cw.label, speak: cw.speak, id: cw.id });
+  });
+  return merged;
+}
+
+function render() {
+  container.innerHTML = "";
+  buildView().forEach(cat => {
+    const section = document.createElement("div");
+    section.className = "section";
+
+    const title = document.createElement("div");
+    title.className = "section-title";
+    title.textContent = cat.title;
+    section.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+
+    cat.words.forEach(w => {
+      const wrap = document.createElement("div");
+      wrap.className = "wrap";
+
+      const btn = document.createElement("button");
+      btn.className = "word" + (w.id ? " custom" : "");
+      btn.textContent = w.label;
+      btn.addEventListener("click", () => {
+        if (document.body.classList.contains("editing")) return;
+        speak(w.speak, w.label);
+      });
+      wrap.appendChild(btn);
+
+      if (w.id) {
+        const del = document.createElement("button");
+        del.className = "del";
+        del.textContent = "×";
+        del.addEventListener("click", () => {
+          if (!confirm("「" + w.label + "」を消す？")) return;
+          customWords = customWords.filter(c => c.id !== w.id);
+          saveCustom();
+          render();
+          refreshCatSelect();
+        });
+        wrap.appendChild(del);
+      }
+      grid.appendChild(wrap);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+}
+
+// --- 追加フォーム ---
+const addBox = document.getElementById("addBox");
+const addLabel = document.getElementById("addLabel");
+const addSpeak = document.getElementById("addSpeak");
+const addCat = document.getElementById("addCat");
+const addNewCat = document.getElementById("addNewCat");
+
+function refreshCatSelect() {
+  const prev = addCat.value;
+  const titles = buildView().map(c => c.title);
+  addCat.innerHTML = "";
+  titles.forEach(t => {
+    const o = document.createElement("option");
+    o.value = t;
+    o.textContent = t;
+    addCat.appendChild(o);
+  });
+  const o = document.createElement("option");
+  o.value = NEW_CAT;
+  o.textContent = "＋ 新しいカテゴリ";
+  addCat.appendChild(o);
+  if ([...addCat.options].some(op => op.value === prev)) addCat.value = prev;
+  addNewCat.style.display = addCat.value === NEW_CAT ? "block" : "none";
+}
+
+addCat.addEventListener("change", () => {
+  addNewCat.style.display = addCat.value === NEW_CAT ? "block" : "none";
+});
+
+document.getElementById("addToggle").addEventListener("click", () => {
+  addBox.classList.toggle("open");
+  if (addBox.classList.contains("open")) addLabel.focus();
+});
+
+document.getElementById("editToggle").addEventListener("click", () => {
+  document.body.classList.toggle("editing");
+});
+
+document.getElementById("addSubmit").addEventListener("click", () => {
+  const label = addLabel.value.trim();
+  if (!label) { addLabel.focus(); return; }
+  const speakText = addSpeak.value.trim() || label;
+  let cat = addCat.value === NEW_CAT ? addNewCat.value.trim() : addCat.value;
+  if (!cat) cat = "マイ言葉";
+
+  customWords.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    label, speak: speakText, cat
+  });
+  saveCustom();
+  addLabel.value = "";
+  addSpeak.value = "";
+  addNewCat.value = "";
+  render();
+  refreshCatSelect();
+  addCat.value = cat;
+  addNewCat.style.display = "none";
+  addLabel.focus();
+});
+
+render();
+refreshCatSelect();
+
+function speak(text, label) {
+  if (!("speechSynthesis" in window)) {
+    alert("この端末は音声読み上げに対応していません");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "ja-JP";
+  utter.rate = parseFloat(rateInput.value);
+  window.speechSynthesis.speak(utter);
+  lastText.textContent = "🔊 " + label;
+}
+
+document.getElementById("stopBtn").addEventListener("click", () => {
+  window.speechSynthesis.cancel();
+  lastText.textContent = "止めたよ";
+});
+
+const freeInput = document.getElementById("freeInput");
+const freeSpeakBtn = document.getElementById("freeSpeakBtn");
+
+function speakFree() {
+  const text = freeInput.value.trim();
+  if (!text) return;
+  speak(text, text);
+}
+
+freeSpeakBtn.addEventListener("click", speakFree);
+freeInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") speakFree();
+});
+</script>
+
+</body>
+</html>

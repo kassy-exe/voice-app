@@ -1,477 +1,164 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>声の代わりアプリ</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10131a">
+<title>Whisper → Voice</title>
 <style>
-  :root {
-    --bg: #f4f6fa;
-    --card: #ffffff;
-    --accent: #4a7dfc;
-    --accent-dark: #2f5fd6;
-    --text: #222;
-    --sub: #888;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 16px;
-    padding-bottom: 100px;
-  }
-  h1 {
-    font-size: 1.3rem;
-    text-align: center;
-    margin: 8px 0 4px;
-  }
-  .sub {
-    text-align: center;
-    color: var(--sub);
-    font-size: 0.85rem;
-    margin-bottom: 16px;
-  }
-  .section {
-    margin-bottom: 20px;
-  }
-  .section-title {
-    font-size: 0.95rem;
-    font-weight: bold;
-    color: var(--accent-dark);
-    margin: 0 0 8px 4px;
-    border-left: 4px solid var(--accent);
-    padding-left: 8px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 10px;
-  }
-  button.word {
-    background: var(--card);
-    border: 2px solid #e0e4ec;
-    border-radius: 14px;
-    padding: 14px 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-  button.word:active {
-    transform: scale(0.94);
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent-dark);
-  }
-  #bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-top: 1px solid #ddd;
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-  }
-  #lastText {
-    flex: 1;
-    font-size: 1rem;
-    color: var(--sub);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  #stopBtn {
-    background: #ff5b5b;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 0.9rem;
-    font-weight: bold;
-  }
-  #speedRow {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 16px;
-    font-size: 0.85rem;
-    color: var(--sub);
-  }
-  #speedRow input {
-    width: 120px;
-  }
-  #freeInputRow {
-    display: flex;
-    gap: 8px;
-  }
-  #freeInput {
-    flex: 1;
-    padding: 12px;
-    border: 2px solid #e0e4ec;
-    border-radius: 12px;
-    font-size: 1rem;
-  }
-  #freeSpeakBtn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 0 18px;
-    font-size: 0.95rem;
-    font-weight: bold;
-    white-space: nowrap;
-  }
-  #freeSpeakBtn:active {
-    background: var(--accent-dark);
-  }
-
-  .wrap { position: relative; }
-  .wrap { display: flex; }
-  .wrap button.word { width: 100%; height: 100%; }
-  .del {
-    position: absolute; top: -6px; right: -6px;
-    width: 24px; height: 24px; border-radius: 50%;
-    border: none; background: #ff5b5b; color: #fff;
-    font-size: 14px; line-height: 24px; padding: 0; display: none;
-  }
-  body.editing .del { display: block; }
-  body.editing button.word.custom { border-style: dashed; border-color: #ff5b5b; }
-  #addBox {
-    background: var(--card); border: 2px solid #e0e4ec; border-radius: 14px;
-    padding: 12px; display: none; flex-direction: column; gap: 8px;
-  }
-  #addBox.open { display: flex; }
-  #addBox input, #addBox select {
-    padding: 10px; border: 2px solid #e0e4ec; border-radius: 10px;
-    font-size: 1rem; width: 100%; background: #fff;
-  }
-  .toolRow { display: flex; gap: 8px; margin-bottom: 20px; }
-  .toolRow button, #addSubmit {
-    flex: 1; background: var(--card); border: 2px solid var(--accent);
-    color: var(--accent-dark); border-radius: 12px; padding: 10px;
-    font-size: 0.9rem; font-weight: bold;
-  }
-  #addSubmit { background: var(--accent); color: #fff; }
-  body.editing #editToggle { background: #ff5b5b; border-color: #ff5b5b; color: #fff; }
-  .hint { font-size: 0.75rem; color: var(--sub); }
+:root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#30394a;--text:#edf2fb;--muted:#9ba8ba;--accent:#7cafff;--red:#ff7777}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#202b3d 0,#10131a 55%);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;padding:24px}
+main{max-width:720px;margin:0 auto}
+h1{font-size:clamp(26px,6vw,38px);margin:12px 0 4px;letter-spacing:-.04em}
+.sub{color:var(--muted);margin:0 0 24px}
+.panel{background:#1a202bdf;border:1px solid var(--line);border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 14px 40px #0003}
+.status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
+.dot{width:9px;height:9px;border-radius:50%;background:#697588}
+.dot.live{background:#67dc9b;box-shadow:0 0 14px #67dc9b88}
+button,select,input{font:inherit}
+button{border:0;border-radius:13px;padding:13px 18px;font-weight:700;cursor:pointer}
+.primary{background:var(--accent);color:#081321}
+.stop{background:#3a2630;color:#ffdede}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+label{display:block;color:var(--muted);font-size:13px;margin:14px 0 6px}
+select,input[type=range]{width:100%}
+select{background:#111722;color:var(--text);border:1px solid var(--line);padding:11px;border-radius:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.transcript{min-height:100px;white-space:pre-wrap;color:#cbd7e8}
+.output{font-size:22px;min-height:52px;white-space:pre-wrap}
+.small{font-size:13px;color:var(--muted)}
+.warning{color:#ffd38b}
+@media(max-width:520px){body{padding:16px}.grid{grid-template-columns:1fr}.panel{padding:16px}}
 </style>
 </head>
 <body>
+<main>
+  <div class="status"><span class="dot" id="dot"></span><span id="status">待機中</span></div>
+  <h1>Whisper → Voice</h1>
+  <p class="sub">ささやき声を聞き取って、合成音声でリアルタイムに読み上げる</p>
 
-<h1>声の代わりアプリ</h1>
-<div class="sub">ボタンを押すと読み上げるよ</div>
+  <section class="panel">
+    <div class="grid">
+      <div><label for="lang">聞き取り言語</label>
+        <select id="lang"><option value="ja-JP">日本語</option><option value="en-US">English</option></select>
+      </div>
+      <div><label for="voice">読み上げ音声</label><select id="voice"><option value="">システム標準</option></select></div>
+    </div>
+    <label for="rate">読み上げ速度：<span id="rateVal">1.0</span></label>
+    <input id="rate" type="range" min=".7" max="1.5" step=".1" value="1">
+    <label for="delay">読み上げ開始の待ち時間：<span id="delayVal">0.8秒</span></label>
+    <input id="delay" type="range" min=".3" max="2" step=".1" value=".8">
+    <div class="controls">
+      <button class="primary" id="start">● 聞き取り開始</button>
+      <button class="stop" id="stop" disabled>■ 停止</button>
+    </div>
+    <p class="small">マイクの使用を許可してね。周囲の音や小さすぎる声では誤認識することがあるよ。</p>
+  </section>
 
-<div id="speedRow">
-  速さ
-  <input type="range" id="rate" min="0.5" max="1.5" step="0.1" value="1">
-  <span id="rateVal">1.0</span>
-</div>
-
-<div class="section">
-  <div class="section-title">その他（自由入力）</div>
-  <div id="freeInputRow">
-    <input type="text" id="freeInput" placeholder="言いたいことを入力">
-    <button id="freeSpeakBtn">読み上げ</button>
-  </div>
-</div>
-
-<div class="toolRow">
-  <button id="addToggle">＋ 言葉を追加</button>
-  <button id="editToggle">削除モード</button>
-</div>
-
-<div class="section">
-  <div id="addBox">
-    <input type="text" id="addLabel" placeholder="ボタンの表示（例：トイレ）">
-    <input type="text" id="addSpeak" placeholder="読み方（空なら表示と同じ）">
-    <div class="hint">読み間違えるときは、ひらがなで読み方を入れてね</div>
-    <select id="addCat"></select>
-    <input type="text" id="addNewCat" placeholder="新しいカテゴリ名" style="display:none">
-    <button id="addSubmit">追加する</button>
-  </div>
-</div>
-
-<div id="buttons"></div>
-
-<div id="bar">
-  <div id="lastText">ボタンを押してね</div>
-  <button id="stopBtn">■ 止める</button>
-</div>
-
+  <section class="panel">
+    <label>聞き取った内容</label>
+    <div class="transcript" id="heard">ここに認識した文章が表示されるよ</div>
+    <label>読み上げ中</label>
+    <div class="output" id="spoken">---</div>
+  </section>
+  <p class="small warning" id="compat"></p>
+  <p class="small">このページはブラウザ内蔵の音声認識と音声合成を使うよ。音声認識はブラウザや端末によって非対応の場合があり、対応していても処理がクラウド経由になることがあるよ。</p>
+</main>
 <script>
-const categories = [
-  {
-    title: "返事",
-    words: [
-      { label: "うん", speak: "うん" },
-      { label: "いいえ", speak: "いいえ" },
-    ]
-  },
-  {
-    title: "状態",
-    words: [
-      { label: "風邪で声出ない", speak: "風邪で声が出ない" },
-      { label: "喉", speak: "喉" },
-      { label: "頭", speak: "頭" },
-      { label: "痛い", speak: "痛い" },
-      { label: "乾いた", speak: "乾いた" },
-      { label: "痰", speak: "痰" },
-      { label: "絡む", speak: "絡む" },
-    ]
-  },
-  {
-    title: "呼びかけ",
-    words: [
-      { label: "Mom", speak: "ままー" },
-      { label: "助けて", speak: "助けて" },
-    ]
-  },
-  {
-    title: "飲食",
-    words: [
-      { label: "お茶", speak: "お茶" },
-      { label: "水", speak: "水" },
-      { label: "飲み物", speak: "飲み物" },
-      { label: "食べる", speak: "食べる" },
-      { label: "薬", speak: "薬" },
-      { label: "飲む", speak: "飲む" },
-      { label: "水筒", speak: "水筒" },
-      { label: "コップ", speak: "コップ" },
-    ]
-  },
-  {
-    title: "対応",
-    words: [
-      { label: "病院", speak: "病院" },
-      { label: "行く", speak: "いく" },
-      { label: "くれ", speak: "くれ" },
-      { label: "ない", speak: "ない" },
-    ]
-  },
-  {
-    title: "学校",
-    words: [
-      { label: "学校", speak: "学校" },
-      { label: "塾", speak: "塾" },
-      { label: "休む", speak: "休む" },
-    ]
-  },
-  {
-    title: "ケア用品",
-    words: [
-      { label: "のど飴", speak: "のど飴" },
-      { label: "喉スプレー", speak: "喉スプレー" },
-    ]
-  },
-  {
-    title: "挨拶",
-    words: [
-      { label: "行ってらっしゃい", speak: "いってらっしゃい" },
-      { label: "おかえり", speak: "おかえり" },
-      { label: "ただいま", speak: "ただいま" },
-      { label: "行ってきます", speak: "いってきます" },
-      { label: "ありがとう", speak: "ありがとう" },
-    ]
-  },
-];
+(() => {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const $ = id => document.getElementById(id);
+  const startBtn=$('start'), stopBtn=$('stop'), dot=$('dot'), status=$('status');
+  const heard=$('heard'), spoken=$('spoken'), compat=$('compat');
+  let recognition=null, running=false, timer=null, pending='', lastFinal='', voices=[];
 
-const container = document.getElementById("buttons");
-const lastText = document.getElementById("lastText");
-const rateInput = document.getElementById("rate");
-const rateVal = document.getElementById("rateVal");
-
-rateInput.addEventListener("input", () => {
-  rateVal.textContent = parseFloat(rateInput.value).toFixed(1);
-});
-
-const STORAGE_KEY = "voiceApp.customWords.v1";
-const NEW_CAT = "__new__";
-let customWords = loadCustom();
-
-function loadCustom() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveCustom() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(customWords));
-  } catch (e) {
-    alert("保存できなかった（プライベートモードかも）");
-  }
-}
-
-function buildView() {
-  // 既定カテゴリ + 追加分を結合
-  const merged = categories.map(c => ({ title: c.title, words: c.words.map(w => ({ ...w })) }));
-  customWords.forEach(cw => {
-    let cat = merged.find(c => c.title === cw.cat);
-    if (!cat) {
-      cat = { title: cw.cat, words: [] };
-      merged.push(cat);
-    }
-    cat.words.push({ label: cw.label, speak: cw.speak, id: cw.id });
-  });
-  return merged;
-}
-
-function render() {
-  container.innerHTML = "";
-  buildView().forEach(cat => {
-    const section = document.createElement("div");
-    section.className = "section";
-
-    const title = document.createElement("div");
-    title.className = "section-title";
-    title.textContent = cat.title;
-    section.appendChild(title);
-
-    const grid = document.createElement("div");
-    grid.className = "grid";
-
-    cat.words.forEach(w => {
-      const wrap = document.createElement("div");
-      wrap.className = "wrap";
-
-      const btn = document.createElement("button");
-      btn.className = "word" + (w.id ? " custom" : "");
-      btn.textContent = w.label;
-      btn.addEventListener("click", () => {
-        if (document.body.classList.contains("editing")) return;
-        speak(w.speak, w.label);
-      });
-      wrap.appendChild(btn);
-
-      if (w.id) {
-        const del = document.createElement("button");
-        del.className = "del";
-        del.textContent = "×";
-        del.addEventListener("click", () => {
-          if (!confirm("「" + w.label + "」を消す？")) return;
-          customWords = customWords.filter(c => c.id !== w.id);
-          saveCustom();
-          render();
-          refreshCatSelect();
-        });
-        wrap.appendChild(del);
-      }
-      grid.appendChild(wrap);
+  function loadVoices(){
+    voices=speechSynthesis.getVoices();
+    const select=$('voice'), old=select.value;
+    select.innerHTML='<option value="">システム標準</option>';
+    voices.forEach((v,i)=>{
+      const o=document.createElement('option'); o.value=String(i); o.textContent=v.name+' ('+v.lang+')'; select.appendChild(o);
     });
-
-    section.appendChild(grid);
-    container.appendChild(section);
-  });
-}
-
-// --- 追加フォーム ---
-const addBox = document.getElementById("addBox");
-const addLabel = document.getElementById("addLabel");
-const addSpeak = document.getElementById("addSpeak");
-const addCat = document.getElementById("addCat");
-const addNewCat = document.getElementById("addNewCat");
-
-function refreshCatSelect() {
-  const prev = addCat.value;
-  const titles = buildView().map(c => c.title);
-  addCat.innerHTML = "";
-  titles.forEach(t => {
-    const o = document.createElement("option");
-    o.value = t;
-    o.textContent = t;
-    addCat.appendChild(o);
-  });
-  const o = document.createElement("option");
-  o.value = NEW_CAT;
-  o.textContent = "＋ 新しいカテゴリ";
-  addCat.appendChild(o);
-  if ([...addCat.options].some(op => op.value === prev)) addCat.value = prev;
-  addNewCat.style.display = addCat.value === NEW_CAT ? "block" : "none";
-}
-
-addCat.addEventListener("change", () => {
-  addNewCat.style.display = addCat.value === NEW_CAT ? "block" : "none";
-});
-
-document.getElementById("addToggle").addEventListener("click", () => {
-  addBox.classList.toggle("open");
-  if (addBox.classList.contains("open")) addLabel.focus();
-});
-
-document.getElementById("editToggle").addEventListener("click", () => {
-  document.body.classList.toggle("editing");
-});
-
-document.getElementById("addSubmit").addEventListener("click", () => {
-  const label = addLabel.value.trim();
-  if (!label) { addLabel.focus(); return; }
-  const speakText = addSpeak.value.trim() || label;
-  let cat = addCat.value === NEW_CAT ? addNewCat.value.trim() : addCat.value;
-  if (!cat) cat = "マイ言葉";
-
-  customWords.push({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    label, speak: speakText, cat
-  });
-  saveCustom();
-  addLabel.value = "";
-  addSpeak.value = "";
-  addNewCat.value = "";
-  render();
-  refreshCatSelect();
-  addCat.value = cat;
-  addNewCat.style.display = "none";
-  addLabel.focus();
-});
-
-render();
-refreshCatSelect();
-
-function speak(text, label) {
-  if (!("speechSynthesis" in window)) {
-    alert("この端末は音声読み上げに対応していません");
-    return;
+    if(old) select.value=old;
   }
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "ja-JP";
-  utter.rate = parseFloat(rateInput.value);
-  window.speechSynthesis.speak(utter);
-  lastText.textContent = "🔊 " + label;
-}
+  loadVoices();
+  if('onvoiceschanged' in speechSynthesis) speechSynthesis.onvoiceschanged=loadVoices;
 
-document.getElementById("stopBtn").addEventListener("click", () => {
-  window.speechSynthesis.cancel();
-  lastText.textContent = "止めたよ";
-});
+  $('rate').addEventListener('input',()=> $('rateVal').textContent=Number($('rate').value).toFixed(1));
+  $('delay').addEventListener('input',()=> $('delayVal').textContent=Number($('delay').value).toFixed(1)+'秒');
 
-const freeInput = document.getElementById("freeInput");
-const freeSpeakBtn = document.getElementById("freeSpeakBtn");
-
-function speakFree() {
-  const text = freeInput.value.trim();
-  if (!text) return;
-  speak(text, text);
-}
-
-freeSpeakBtn.addEventListener("click", speakFree);
-freeInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") speakFree();
-});
+  function say(text){
+    const clean=text.trim();
+    if(!clean) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(clean);
+    u.lang=$('lang').value;
+    u.rate=Number($('rate').value);
+    const i=$('voice').value;
+    if(i!=='' && voices[Number(i)]) u.voice=voices[Number(i)];
+    u.onstart=()=>spoken.textContent=clean;
+    u.onerror=()=>{status.textContent=running?'聞き取り中（読み上げエラー）':'停止中';};
+    speechSynthesis.speak(u);
+  }
+  function queueSpeech(text){
+    pending=(pending+' '+text).trim();
+    clearTimeout(timer);
+    timer=setTimeout(()=>{
+      const phrase=pending; pending='';
+      if(phrase) say(phrase);
+    },Number($('delay').value)*1000);
+  }
+  function setRunning(value){
+    running=value; dot.classList.toggle('live',value);
+    status.textContent=value?'聞き取り中':'停止中';
+    startBtn.disabled=value; stopBtn.disabled=!value;
+  }
+  function stop(){
+    running=false; clearTimeout(timer); pending='';
+    if(recognition){try{recognition.stop()}catch(e){}}
+    speechSynthesis.cancel(); setRunning(false);
+  }
+  startBtn.addEventListener('click',()=>{
+    if(!SpeechRecognition){
+      compat.textContent='このブラウザは音声認識に対応していないみたい。Chromeなど対応ブラウザで試してね。';
+      return;
+    }
+    if(running) return;
+    recognition=new SpeechRecognition();
+    recognition.lang=$('lang').value;
+    recognition.continuous=true;
+    recognition.interimResults=false;
+    recognition.maxAlternatives=1;
+    recognition.onresult=(event)=>{
+      let added='';
+      for(let i=event.resultIndex;i<event.results.length;i++){
+        if(event.results[i].isFinal){
+          const text=event.results[i][0].transcript.trim();
+          if(text && text!==lastFinal){added+=text+' ';lastFinal=text;}
+        }
+      }
+      if(added){heard.textContent=added.trim();queueSpeech(added);}
+    };
+    recognition.onerror=(event)=>{
+      if(event.error==='not-allowed' || event.error==='service-not-allowed'){
+        compat.textContent='マイクの使用が許可されていないよ。ブラウザのサイト設定でマイクを許可してね。';
+        stop();
+      } else if(event.error!=='no-speech'){
+        status.textContent='認識エラー：'+event.error;
+      }
+    };
+    recognition.onend=()=>{
+      if(running){try{recognition.start()}catch(e){}}
+      else setRunning(false);
+    };
+    lastFinal=''; heard.textContent='聞き取り中…'; spoken.textContent='---'; compat.textContent='';
+    try{recognition.start();setRunning(true)}
+    catch(e){compat.textContent='音声認識を開始できなかったよ。ページを再読み込みして試してね。'}
+  });
+  stopBtn.addEventListener('click',stop);
+  window.addEventListener('beforeunload',()=>{if(recognition)recognition.stop();speechSynthesis.cancel()});
+})();
 </script>
-
 </body>
 </html>

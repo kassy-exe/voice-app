@@ -2,162 +2,101 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10131a">
-<title>Whisper → Voice</title>
+<title>Whisper → Voice | iPhone</title>
 <style>
-:root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#30394a;--text:#edf2fb;--muted:#9ba8ba;--accent:#7cafff;--red:#ff7777}
+:root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#30394a;--text:#edf2fb;--muted:#9ba8ba;--accent:#83b5ff}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#202b3d 0,#10131a 55%);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;padding:24px}
-main{max-width:720px;margin:0 auto}
-h1{font-size:clamp(26px,6vw,38px);margin:12px 0 4px;letter-spacing:-.04em}
-.sub{color:var(--muted);margin:0 0 24px}
-.panel{background:#1a202bdf;border:1px solid var(--line);border-radius:20px;padding:20px;margin:16px 0;box-shadow:0 14px 40px #0003}
-.status{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
-.dot{width:9px;height:9px;border-radius:50%;background:#697588}
-.dot.live{background:#67dc9b;box-shadow:0 0 14px #67dc9b88}
-button,select,input{font:inherit}
-button{border:0;border-radius:13px;padding:13px 18px;font-weight:700;cursor:pointer}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#202b3d 0,#10131a 58%);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",sans-serif;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
+main{max-width:650px;margin:auto}
+h1{font-size:32px;letter-spacing:-.04em;margin:12px 0 4px}
+.sub,.muted{color:var(--muted)}
+.panel{background:#1a202b;border:1px solid var(--line);border-radius:20px;padding:18px;margin:16px 0}
+label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}
+textarea,select{width:100%;background:#101722;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px;font:17px/1.5 inherit}
+textarea{min-height:145px;resize:vertical}
+select{font:16px -apple-system,BlinkMacSystemFont,sans-serif}
+button{font:inherit;font-weight:700;border:0;border-radius:13px;padding:14px 16px;cursor:pointer}
 .primary{background:var(--accent);color:#081321}
-.stop{background:#3a2630;color:#ffdede}
-.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-label{display:block;color:var(--muted);font-size:13px;margin:14px 0 6px}
-select,input[type=range]{width:100%}
-select{background:#111722;color:var(--text);border:1px solid var(--line);padding:11px;border-radius:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.transcript{min-height:100px;white-space:pre-wrap;color:#cbd7e8}
-.output{font-size:22px;min-height:52px;white-space:pre-wrap}
-.small{font-size:13px;color:var(--muted)}
-.warning{color:#ffd38b}
-@media(max-width:520px){body{padding:16px}.grid{grid-template-columns:1fr}.panel{padding:16px}}
+.secondary{background:#30394a;color:var(--text)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+button:disabled{opacity:.45}
+.output{font-size:21px;min-height:45px;white-space:pre-wrap;overflow-wrap:anywhere}
+.note{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:4px 9px;font-size:12px;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+@media(max-width:390px){h1{font-size:28px}.panel{padding:15px}}
 </style>
 </head>
 <body>
 <main>
-  <div class="status"><span class="dot" id="dot"></span><span id="status">待機中</span></div>
+  <span class="pill">iPhone / Safari 対応版</span>
   <h1>Whisper → Voice</h1>
-  <p class="sub">ささやき声を聞き取って、合成音声でリアルタイムに読み上げる</p>
+  <p class="sub">小さな声を文字にして、別の声で読み上げる</p>
 
   <section class="panel">
-    <div class="grid">
-      <div><label for="lang">聞き取り言語</label>
-        <select id="lang"><option value="ja-JP">日本語</option><option value="en-US">English</option></select>
-      </div>
-      <div><label for="voice">読み上げ音声</label><select id="voice"><option value="">システム標準</option></select></div>
-    </div>
-    <label for="rate">読み上げ速度：<span id="rateVal">1.0</span></label>
-    <input id="rate" type="range" min=".7" max="1.5" step=".1" value="1">
-    <label for="delay">読み上げ開始の待ち時間：<span id="delayVal">0.8秒</span></label>
-    <input id="delay" type="range" min=".3" max="2" step=".1" value=".8">
+    <strong>1. ささやきを文字にする</strong>
+    <p class="note">入力欄をタップして、iPhoneキーボードのマイクボタンから音声入力してね</p>
+    <textarea id="text" placeholder="ここに音声入力された文章が入るよ"></textarea>
     <div class="controls">
-      <button class="primary" id="start">● 聞き取り開始</button>
-      <button class="stop" id="stop" disabled>■ 停止</button>
+      <button class="secondary" id="clear">クリア</button>
+      <button class="primary" id="speak">▶ 読み上げる</button>
     </div>
-    <p class="small">マイクの使用を許可してね。周囲の音や小さすぎる声では誤認識することがあるよ。</p>
   </section>
 
   <section class="panel">
-    <label>聞き取った内容</label>
-    <div class="transcript" id="heard">ここに認識した文章が表示されるよ</div>
-    <label>読み上げ中</label>
-    <div class="output" id="spoken">---</div>
+    <strong>2. 読み上げ設定</strong>
+    <label for="lang">読み上げ言語</label>
+    <select id="lang"><option value="ja-JP">日本語</option><option value="en-US">English</option></select>
+    <label for="voice">声</label>
+    <select id="voice"><option value="">システム標準</option></select>
+    <label for="rate">速度：<span id="rateVal">1.0</span></label>
+    <input id="rate" type="range" min=".7" max="1.5" step=".1" value="1">
+    <div class="controls">
+      <button class="secondary" id="stop">■ 停止</button>
+      <button class="secondary" id="test">テスト再生</button>
+    </div>
+    <label>読み上げた文章</label>
+    <div class="output" id="output">---</div>
   </section>
-  <p class="small warning" id="compat"></p>
-  <p class="small">このページはブラウザ内蔵の音声認識と音声合成を使うよ。音声認識はブラウザや端末によって非対応の場合があり、対応していても処理がクラウド経由になることがあるよ。</p>
+
+  <p class="note">iPhoneでは、Webページからキーボードの音声入力を自動で開始したり、入力のたびに自動読み上げしたりすることはできないため、この版は「音声入力 → 読み上げ」方式だよ。音声入力と読み上げはiPhone側の機能を使い、音声データをこのページ独自のサーバーへ送信しない設計だよ。</p>
 </main>
 <script>
 (() => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const $ = id => document.getElementById(id);
-  const startBtn=$('start'), stopBtn=$('stop'), dot=$('dot'), status=$('status');
-  const heard=$('heard'), spoken=$('spoken'), compat=$('compat');
-  let recognition=null, running=false, timer=null, pending='', lastFinal='', voices=[];
-
-  function loadVoices(){
-    voices=speechSynthesis.getVoices();
-    const select=$('voice'), old=select.value;
-    select.innerHTML='<option value="">システム標準</option>';
-    voices.forEach((v,i)=>{
-      const o=document.createElement('option'); o.value=String(i); o.textContent=v.name+' ('+v.lang+')'; select.appendChild(o);
-    });
-    if(old) select.value=old;
-  }
-  loadVoices();
-  if('onvoiceschanged' in speechSynthesis) speechSynthesis.onvoiceschanged=loadVoices;
-
-  $('rate').addEventListener('input',()=> $('rateVal').textContent=Number($('rate').value).toFixed(1));
-  $('delay').addEventListener('input',()=> $('delayVal').textContent=Number($('delay').value).toFixed(1)+'秒');
-
-  function say(text){
-    const clean=text.trim();
-    if(!clean) return;
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(clean);
-    u.lang=$('lang').value;
-    u.rate=Number($('rate').value);
-    const i=$('voice').value;
-    if(i!=='' && voices[Number(i)]) u.voice=voices[Number(i)];
-    u.onstart=()=>spoken.textContent=clean;
-    u.onerror=()=>{status.textContent=running?'聞き取り中（読み上げエラー）':'停止中';};
-    speechSynthesis.speak(u);
-  }
-  function queueSpeech(text){
-    pending=(pending+' '+text).trim();
-    clearTimeout(timer);
-    timer=setTimeout(()=>{
-      const phrase=pending; pending='';
-      if(phrase) say(phrase);
-    },Number($('delay').value)*1000);
-  }
-  function setRunning(value){
-    running=value; dot.classList.toggle('live',value);
-    status.textContent=value?'聞き取り中':'停止中';
-    startBtn.disabled=value; stopBtn.disabled=!value;
-  }
-  function stop(){
-    running=false; clearTimeout(timer); pending='';
-    if(recognition){try{recognition.stop()}catch(e){}}
-    speechSynthesis.cancel(); setRunning(false);
-  }
-  startBtn.addEventListener('click',()=>{
-    if(!SpeechRecognition){
-      compat.textContent='このブラウザは音声認識に対応していないみたい。Chromeなど対応ブラウザで試してね。';
-      return;
-    }
-    if(running) return;
-    recognition=new SpeechRecognition();
-    recognition.lang=$('lang').value;
-    recognition.continuous=true;
-    recognition.interimResults=false;
-    recognition.maxAlternatives=1;
-    recognition.onresult=(event)=>{
-      let added='';
-      for(let i=event.resultIndex;i<event.results.length;i++){
-        if(event.results[i].isFinal){
-          const text=event.results[i][0].transcript.trim();
-          if(text && text!==lastFinal){added+=text+' ';lastFinal=text;}
-        }
-      }
-      if(added){heard.textContent=added.trim();queueSpeech(added);}
-    };
-    recognition.onerror=(event)=>{
-      if(event.error==='not-allowed' || event.error==='service-not-allowed'){
-        compat.textContent='マイクの使用が許可されていないよ。ブラウザのサイト設定でマイクを許可してね。';
-        stop();
-      } else if(event.error!=='no-speech'){
-        status.textContent='認識エラー：'+event.error;
-      }
-    };
-    recognition.onend=()=>{
-      if(running){try{recognition.start()}catch(e){}}
-      else setRunning(false);
-    };
-    lastFinal=''; heard.textContent='聞き取り中…'; spoken.textContent='---'; compat.textContent='';
-    try{recognition.start();setRunning(true)}
-    catch(e){compat.textContent='音声認識を開始できなかったよ。ページを再読み込みして試してね。'}
-  });
-  stopBtn.addEventListener('click',stop);
-  window.addEventListener('beforeunload',()=>{if(recognition)recognition.stop();speechSynthesis.cancel()});
+ const $=id=>document.getElementById(id);
+ let voices=[];
+ function loadVoices(){
+   voices=speechSynthesis.getVoices();
+   const select=$('voice'), old=select.value;
+   select.innerHTML='<option value="">システム標準</option>';
+   voices.forEach((v,i)=>{
+     const o=document.createElement('option');
+     o.value=String(i); o.textContent=v.name+' ('+v.lang+')'; select.appendChild(o);
+   });
+   if(old) select.value=old;
+ }
+ loadVoices();
+ if('onvoiceschanged' in speechSynthesis) speechSynthesis.onvoiceschanged=loadVoices;
+ $('rate').addEventListener('input',()=> $('rateVal').textContent=Number($('rate').value).toFixed(1));
+ function say(value){
+   const text=value.trim();
+   if(!text){$('output').textContent='先に音声入力してね';return;}
+   speechSynthesis.cancel();
+   const utterance=new SpeechSynthesisUtterance(text);
+   utterance.lang=$('lang').value;
+   utterance.rate=Number($('rate').value);
+   const selected=$('voice').value;
+   if(selected!=='' && voices[Number(selected)]) utterance.voice=voices[Number(selected)];
+   $('output').textContent=text;
+   speechSynthesis.speak(utterance);
+ }
+ $('speak').addEventListener('click',()=>say($('text').value));
+ $('test').addEventListener('click',()=>say($('lang').value==='ja-JP'?'読み上げテストです':'This is a speech test.'));
+ $('stop').addEventListener('click',()=>speechSynthesis.cancel());
+ $('clear').addEventListener('click',()=>{$('text').value='';$('output').textContent='---';speechSynthesis.cancel();});
+ window.addEventListener('pagehide',()=>speechSynthesis.cancel());
 })();
 </script>
 </body>
